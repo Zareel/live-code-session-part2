@@ -1,48 +1,48 @@
 import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema({
-
-    product:{
-        type:[
-       {
-        productId:{
+const orderSchema = new mongoose.Schema(
+  {
+    product: {
+      type: [
+        {
+          productId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Product"
+            ref: "Product",
+          },
+          count: Number,
+          price: Number,
         },
-        count: Number,
-        price: Number,
-       }
-        ],
-        required: true,
+      ],
+      required: true,
     },
-    user:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    address:{
+    address: {
+      type: String,
+      required: true,
+    },
+    phoneNumber: {
+      type: Number,
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    coupon: {
+      type: String,
+      TransactionId: String,
+      status: {
         type: String,
-        required: true
+        enum: ["OREDERED", "SHIPPED", "DELIVERED", "CANCELLED"],
+        default: "Ordered",
+      },
     },
-    phoneNumber:{
-        type: Number,
-        required: true
-    },
-    amount:{
-        type: Number,
-        required: true
-    },
-    coupon:{
-        type: String,
-        TransactionId: String,
-        status:{
-            type: String,
-            enum:["OREDERED", "SHIPPED", "DELIVERED","CANCELLED"],
-            default: "Ordered", 
-        }
+  },
+  { timestamps: true }
+);
 
-    }
-
-}, {timestamps: true})
-
-export default mongoose.model("Order", orderSchema)
+export default mongoose.model("Order", orderSchema);

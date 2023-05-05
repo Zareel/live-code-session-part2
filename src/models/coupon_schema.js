@@ -1,18 +1,21 @@
 import mongoose from "mongoose";
 
-const couponSchema = new mongoose.Schema({
-    code:{
-        type: String,
-        required: [true, "Please provide a coupon code"]
+const couponSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      required: [true, "Please provide a coupon code"],
     },
-    discount:{
-        type: Number,
-        default: 0
+    discount: {
+      type: Number,
+      default: 0,
     },
-    active:{
-        type: String,
-        default:true
-    }
-}, {timestamps:true})
+    active: {
+      type: String,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model("Coupon", couponSchema)
+export default mongoose.model("Coupon", couponSchema);
