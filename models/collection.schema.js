@@ -13,3 +13,5 @@ const collectionSchema = new mongoose.Schema(
 );
 
 export default mongoose.model("Collection", collectionSchema);
+
+// "Collection will be converted in to all lowercase and to plural in the database"

@@ -1,4 +1,5 @@
 # live-code-session
+
 A discussion over creating a backend for e-comm app
 
 # Connecting to database
@@ -87,7 +88,6 @@ import app from "./app.js";
     throw err;
   }
 })();
-
 ```
 
 ## Create .env.example
@@ -154,7 +154,43 @@ import config from "./src/config/index.js";
     throw err;
   }
 })();
-
 ```
 
-## 1 hr
+## Create models
+
+- category
+- product
+- user
+- discount
+
+### timestamps =>
+
+- mongoose schemas support a timestamps option.
+- if you set `timestamps: true`, Mongoose will add two properties of type `Date` to your schema
+
+1. createdAt: A date representing when this document is created
+2. updatedAt: A date representing when this document is updated
+
+### create `model` folder and `collection.schema.js` file
+
+- `collection.schema.js` 👇
+
+```js
+import mongoose from "mongoose";
+
+const collectionSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please provide a collection name"],
+      maxLength: [120, "Collection name cannot exceed 120 chars"],
+      trim: true,
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Collection", collectionSchema);
+
+// "Collection will be converted in to all lowercase and to plural in the database"
+```
