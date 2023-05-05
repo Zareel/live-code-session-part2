@@ -171,6 +171,8 @@ import config from "./src/config/index.js";
 1. createdAt: A date representing when this document is created
 2. updatedAt: A date representing when this document is updated
 
+## collection schema
+
 ### create `model` folder and `collection.schema.js` file
 
 - `collection.schema.js` 👇
@@ -194,3 +196,242 @@ export default mongoose.model("Collection", collectionSchema);
 
 // "Collection will be converted in to all lowercase and to plural in the database"
 ```
+
+## product schema
+
+```js
+import mongoose from "mongoose";
+
+const productSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: ["true", "Name is required"],
+      trim: true,
+      maxLength: [120, "Product name must not exceed 120 chars"],
+    },
+    price: {
+      type: Number,
+      required: ["true", "please provide a product price"],
+      maxLength: [5, "product name should not be max than 120 chars"],
+    },
+    description: {
+      type: String,
+    },
+    photos: [
+      {
+        secure_url: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    stock: {
+      type: Number,
+      default: 0,
+    },
+    sold: {
+      type: Number,
+      default: 0,
+    },
+    collectionId: {
+      ref: "Collection",
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Product", productSchema);
+```
+
+## coupon schema
+
+```js
+import mongoose from "mongoose";
+
+const couponSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      required: [true, "Please provide a coupon code"],
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    active: {
+      type: String,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Coupon", couponSchema);
+```
+
+## order schema
+
+```js
+import mongoose from "mongoose";
+
+const orderSchema = new mongoose.Schema(
+  {
+    product: {
+      type: [
+        {
+          productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+          },
+          count: Number,
+          price: Number,
+        },
+      ],
+      required: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    phoneNumber: {
+      type: Number,
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    coupon: {
+      type: String,
+      TransactionId: String,
+      status: {
+        type: String,
+        enum: ["OREDERED", "SHIPPED", "DELIVERED", "CANCELLED"],
+        default: "Ordered",
+      },
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Order", orderSchema);
+```
+
+## user schema
+
+```js
+import mongoose, { mongo } from "mongoose";
+import AuthRoles from "../utils/authRoles";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import JWT from "jsonwebtoken";
+import config from "../config/index.js";
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: ["true", "Name is required"],
+      maxLength: [50, "Name must be less than 50 chars"],
+    },
+    email: {
+      type: String,
+      required: ["true", "Email is required"],
+    },
+    password: {
+      type: String,
+      required: ["true", "password is required"],
+      minLength: [8, "password must contain atleast 8 chars"],
+      select: false,
+    },
+    role: {
+      type: String,
+      enum: Object.values(AuthRoles),
+      default: AuthRoles.User,
+    },
+
+    // forgot password fucnctionality
+    forgotPasswordToken: String,
+    forgotPasswordExpiry: Date,
+  },
+  { timestamps: true }
+);
+
+// encrypt the password before saving
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  bcrypt.hash(this.password, 10);
+  next();
+});
+
+//compare password
+userSchema.method = {
+  comparePassword: async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+  },
+
+  // generate jwt token
+  getJWTtoken: function () {
+    JWT.sign({ _id: this._id, role: this._role }, config.JWT_SECRET, {
+      expiresIn: config.JWT_EXPIRY,
+    });
+  },
+
+  //generate forgot password token
+  generateForgotPasswordToken: function () {
+    const forgotToken = crypto.randomBytes(20).toString("hex");
+
+    // just to encrypt the token encrypted by crypto
+    this.forgotPasswordToken = crypto
+      .createHash("sha256")
+      .update(forgotToken)
+      .digest("hex");
+
+    // time for token to expire
+    this.forgotPasswordExpiry = date.now() + 20 * 60 * 1000;
+    return forgotToken;
+  },
+};
+
+export default mongoose.model("User", userSchema);
+```
+
+# async handler
+
+`service/asyncHandler.js` 👇
+
+```js
+const asyncHandler = (fn) => async (req, res, next) => {
+  try {
+    await fn(req, res, next);
+  } catch (error) {
+    res.status(error.code || 500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export default asyncHandler;
+
+// from the function `fn` the values req, res and next will be extracted
+// next is a middleware flag
+// middleware - software that is stopping you in between. it acts as a bridge between an operating system or database and applications
+// req is coming fron the frontend
+// res is something that is server is sending to the frontend
+```
+
+# Controllers
+
+### Every single method to be async-await and try-catch. How about if we create an higher order function, abstract the functionality and put it seperately and use in every methods
+
+- higher order function => a function that returns a function or take other functions as arguments
+
+## create folder `servise` inside `src` and file `asyncHandler.js` in service folder
