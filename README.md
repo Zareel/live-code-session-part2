@@ -585,3 +585,17 @@ export const login = asyncHandler(async (req, res) => {
   throw new CustomError("Password is incorrect", 400);
 });
 ```
+
+## user logout
+
+- `auth.controller.js`
+
+```js
+// user logout
+export const logout = asyncHandler(async (req, res) => {
+  res.cookie("toke", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
+});
+```

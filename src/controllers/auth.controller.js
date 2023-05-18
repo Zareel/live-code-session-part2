@@ -53,6 +53,7 @@ export const signup = asyncHandler(async (req, res) => {
   });
 });
 
+// user login
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   //validation
@@ -82,4 +83,12 @@ export const login = asyncHandler(async (req, res) => {
   }
   //if the password doesn't match
   throw new CustomError("Password is incorrect", 400);
+});
+
+// user logout
+export const logout = asyncHandler(async (req, res) => {
+  res.cookie("toke", null, {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  });
 });
