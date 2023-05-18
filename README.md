@@ -547,3 +547,41 @@ res.cookie("token", token, cookieOptions);
 
 - There are client side cookies and server side cookies
 - HTTP Only cookies cannot be accessed by the client. If the HTTP Only flag is not set or the cookie is set in clien side, the cookies can be accessed by the client and server side as well
+- we are giving the client the cookie while signing up so that we can use the cookie status to controll the multiple user to access the site. This is why the toke is send to the user in the cookie
+
+## Login functionality
+
+- auth.controller.js`
+
+```js
+export const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  //validation
+  if (!email || !password) {
+    throw new CustomError("Please fill all the details", 400);
+  }
+  // find if the user is existing in the db
+  const user = User.findOne({ email }).select("+ password"); // password was selected false in the user schema. Here we are making the select: true
+
+  if (!user) {
+    throw new CustomError("Invalid credentials", 400);
+  }
+  // if the user exists, compare password
+  const isPasswordMatched = await user.comparePassword(password);
+  // Based on whether password was matched or not we are going to generate a toke for the user
+  if (isPasswordMatched) {
+    const token = user.getJWTtoken();
+    // now since this user object is holding the password also let's go ahead and do the safety
+    user.password = undefined;
+    //set up the cookies
+    res.cookie("token", token, cookieOptions);
+    return res.status(200).json({
+      success: true,
+      token,
+      user,
+    });
+  }
+  //if the password doesn't match
+  throw new CustomError("Password is incorrect", 400);
+});
+```
