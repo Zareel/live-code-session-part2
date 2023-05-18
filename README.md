@@ -405,6 +405,8 @@ export default mongoose.model("User", userSchema);
 
 # async handler
 
+## create folder `servise` inside `src` and file `asyncHandler.js` in service folder
+
 `service/asyncHandler.js` 👇
 
 ```js
@@ -434,4 +436,114 @@ export default asyncHandler;
 
 - higher order function => a function that returns a function or take other functions as arguments
 
-## create folder `servise` inside `src` and file `asyncHandler.js` in service folder
+## custom error handler
+
+- [docs](https://nodejs.org/docs/latest-v20.x/api/errors.html#errormessage)
+
+- `service/customError.js` 👇
+
+```js
+class CustomError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.code = code;
+  }
+}
+
+export default CustomError;
+```
+
+## signup controller
+
+- `controllers/auth.controller.js` 👇
+
+```js
+import asyncHandler from "../service/asyncHandler.js";
+import CustomError from "../service/customError.js";
+import User from "../models/user_schema.js";
+
+//signup a new user
+export const signup = asyncHandler(async (req, res) => {
+  // get data from the user
+  const { name, email, password } = req.body;
+  //validate
+  if (!name || !email || !password) {
+    throw new CustomError("Please add all fields", 400);
+    // default => throw new Error("Require all fields")
+  }
+  // create new entry in the database or lets add this data in the databse
+
+  //check if the user already exist
+  const existingUser = await User.findOne({ email });
+  // if user doesn't exists, thow an error
+  if (existingUser) {
+    throw new CustomError("User already exists", 400);
+  }
+  // creating new user
+  const user = await User.create({
+    name,
+    email,
+    password,
+  });
+  const token = user.getJWTtoken();
+  //safety
+  user.password = undefined; // incase if you want to send the user a welcome message or somethind, other wise ignore. just to show the case by case situation
+  /*
+    the variable user is now having all the `User info` including password.
+  on request for the User info, the password will not come to me because of the `select:false` operation
+  but then, we know that select: false operation actually respects the flag when ther is a select operation something like find by id etc. since this was a creation the select flag will not be respected. so manually went and say that user.password is undefined
+  now the password is flushed out from the variable user
+  */
+  //* sending back response to the user
+  res.status(200).json({
+    success: true,
+    token,
+    user, // incase if you want to send the user a welcome message or somethind, other wise ignore. just to show the case by case situation
+  });
+});
+```
+
+## install and import `cors` and `cookie-parsor` in `app.js`
+
+- [npm i cors](https://www.npmjs.com/package/cors)
+  -CORS (cross origin resource sharing) is a node.js package for providing a Connect/Express middleware that can be used to enable CORS with various options.
+
+- [npm i cookie-parser](https://www.npmjs.com/package/cookie-parser)
+
+- `app.js`
+
+```js
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+
+const app = express();
+
+//middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(cookieParser());
+
+//the instruction is whenever there is a request that comes up front frontend, make sure you are accepting the json data and the urlencoded data from it. But some response will go from server to user also. By installing the cookie parser,  the server can now access the user cookie
+
+export default app;
+```
+
+### store this token in user's cookie
+
+- `auth.controller.js`
+
+```js
+//HTTP Only cookies
+export const cookieOptions = {
+  expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+  httpOnly: true,
+};
+// store this token in user's cookie
+res.cookie("token", token, cookieOptions);
+// now the user can see the token but cannot manipulate it
+```
+
+- There are client side cookies and server side cookies
+- HTTP Only cookies cannot be accessed by the client. If the HTTP Only flag is not set or the cookie is set in clien side, the cookies can be accessed by the client and server side as well
