@@ -39,37 +39,18 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-//compare password
-userSchema.method = {
+userSchema.methods = {
+  //compare password
+  // since we need to access the property, we have to refer this so we cannot use arrow function
   comparePassword: async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
   },
 
-  // generate jwt token
-  getJWTtoken: function () {
-    JWT.sign({ _id: this._id, role: this._role }, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRY,
-    });
-  },
-
-  //generate forgot password token
-  generateForgotPasswordToken: function () {
-    const forgotToken = crypto.randomBytes(20).toString("hex");
-
-    // just to encrypt the token encrypted by crypto
-    this.forgotPasswordToken = crypto
-      .createHash("sha256")
-      .update(forgotToken)
-      .digest("hex");
-
-    // time for token to expire
-    this.forgotPasswordExpiry = date.now() + 20 * 60 * 1000;
-    return forgotToken;
-  },
+  //what if the password is now matched, we have to give him a token 'hey now you can roam arout the appication'
 };
 
 export default mongoose.model("User", userSchema);
