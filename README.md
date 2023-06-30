@@ -378,6 +378,14 @@ userSchema.method = {
   },
 
   // generate jwt token
+  // create jwt_secret and jwt_expiry in .env file
+  // import config in userSchema
+  //what if the password is now matched, we have to give him a token 'hey now you can roam arout the appication'
+  // the payload can only be extracted by someone who knows the JWT_SECTRET
+  // whatever in the payload will be available to me
+  // this JWT.sign cretates a long string which hides some information(whatever you passs in the payload). Whoever    knows the jwt_secret can decode it
+  // when ever you save any information into mongodb it creates a documen id for it. This document id is always named as _id.
+  // this id will be uniqu to every single information that you are storing in the database
   getJWTtoken: function () {
     JWT.sign({ _id: this._id, role: this._role }, config.JWT_SECRET, {
       expiresIn: config.JWT_EXPIRY,
